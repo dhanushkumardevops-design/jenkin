@@ -1,1 +1,48 @@
-
+pipeline{
+    agent any 
+       environment{
+        DOCKER_IMAGE='simplybyte-calculator-jenkins-local'
+        DOCKER_CONTAINER='simplybyte-container-calculator'
+       }
+    parameters{
+        
+        choice (name:'ENVIRONMENT',choices:['testing','build','docker image'],description:'environmentname')
+        choice (name:'docker image',choices:['docker image'],description:'environmentname')
+    }    
+ 
+    
+    stages{
+        
+        
+        stage('git'){
+        steps{
+            git branch: 'main', credentialsId: 'pro.1', url: 'https://github.com/dhanushkumardevops-design/jenkin.git'
+        }}
+              stage('testing'){
+                when{
+                    expression{
+                        params.ENVIRONMENT=='testing'
+                    }}
+                steps{
+                      bat 'mvn test'
+        }}            
+                    
+                stage('build'){
+                steps{
+                    bat 'mvn clean install -DskipTests=true'
+         }}            
+                   stage ('docker image'){
+                   steps{
+                       bat "docker build -t %DOCKER_IMAGE% ."
+         }}           
+                   
+                   stage ('remove image'){
+                   steps{
+                       bat "docker rm -f %DOCKER_CONTAINER% || exit 0"
+                       bat "docker run -d -p 8091:8090 --name %DOCKER_CONTAINER% %DOCKER_IMAGE%"
+         }}
+                 
+             }
+        }
+    
+   
